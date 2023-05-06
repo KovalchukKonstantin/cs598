@@ -2,6 +2,7 @@ import numpy as np
 from sklearn.model_selection import StratifiedShuffleSplit, KFold, StratifiedKFold
 from sklearn.preprocessing import MultiLabelBinarizer
 from iterstrat.ml_stratifiers import MultilabelStratifiedKFold
+from sklearn.model_selection import train_test_split
 import os
 import pandas as pd
 
@@ -20,6 +21,7 @@ def label_npy_file(input_path, output_path):
     for src in ['mimic', 'eicu', 'pooled']:
         filename = '{}_df.pkl'.format(src)
         df = pd.read_pickle(os.path.join(input_path, filename))
+        print(src, df.columns)
         for col in columns_lst:
             column = df[col]
             if col =='diagnosis':
@@ -105,3 +107,28 @@ def train_valid_test_split(target_cols, df, random_state, test_ratio, train_vali
     X = pd.concat([X_train, X_valid,X_test]).reset_index(drop=True)
     print('fold_split_results!!!!! \n', X['dx_fold'].value_counts())
     return X        
+
+
+def simple_train_valid_test_split(df, test_ratio, valid_ratio, random_state=None):
+    X = pd.DataFrame(df)
+    
+    # Train / Test split
+    X_train, X_test = train_test_split(X, test_size=test_ratio, random_state=random_state)
+    
+    # Train / Validation split
+    X_train, X_valid = train_test_split(pd.DataFrame(X_train), test_size=valid_ratio, random_state=random_state)
+    
+    X_train = pd.DataFrame(X_train, columns=X.columns)
+    X_valid = pd.DataFrame(X_valid, columns=X.columns)
+    X_test = pd.DataFrame(X_test, columns=X.columns)
+
+    print(X)
+    X_train.loc[:, 'fold'] = 1
+    X_valid.loc[:, 'fold'] = 2
+    X_test.loc[:, 'fold'] = 0
+    
+    X = pd.concat([X_train, X_valid, X_test]).reset_index(drop=True)
+    
+    print('fold_split_results: \n', X['fold'].value_counts())
+    
+    return X

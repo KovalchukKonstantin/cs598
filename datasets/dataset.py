@@ -9,6 +9,7 @@ import torch.utils.data
 import numpy as np
 import pandas as pd
 
+from preprocess.preprocess_utils import simple_train_valid_test_split
 from transformers import AutoTokenizer
 
 logger = logging.getLogger(__name__)
@@ -71,14 +72,17 @@ class BaseDataset(torch.utils.data.Dataset):
     def __getitem__(self, index):
         raise NotImplementedError()
 
-    def get_fold_indices(self):
+    def get_fold_indices(self, split_indeces=None):
         if self.split == 'train':
             hit = 1
         elif self.split == 'valid':
             hit = 2
         elif self.split == 'test':
             hit = 0
-    
+
+        if split_indeces is not None:
+            return np.where(split_indeces == hit)[0]
+
         df = pd.read_csv(self.fold)
         splits = df[self.task].values
         idcs = np.where(splits == hit)[0]
@@ -219,6 +223,7 @@ class TokenizedDataset(BaseDataset):
         task,
         seed,
         ratio,
+        split_labels,
     ):
         super().__init__(
             input_path=input_path,
@@ -232,20 +237,24 @@ class TokenizedDataset(BaseDataset):
             ratio=ratio,
         )
 
-        hit_idcs = self.get_fold_indices()
+        hit_idcs = self.get_fold_indices(split_labels) #dont have this 
         col_names = ['input_ids', 'token_type_ids', 'attention_mask']
 
         self.offset_orders = None
         self.sequential_lengths = None
 
         self.value = np.load(
-            file=os.path.join(self.data_path, "value.npy")
+            file=os.path.join(self.data_path, "value.npy"), allow_pickle=True
         )
+
+
+        # Replace 42 with your chosen constant seed value
+        #print(self.value.shape)
         self.value = self.value[hit_idcs]
 
         self.input_ids, self.token_type_ids, self.attention_mask = (
             np.load(
-                file=os.path.join(self.data_path, f"{col}{self.ext}"),
+                file=os.path.join(self.data_path, f"{col}{self.ext}"), allow_pickle=True
             ) for col in col_names
         )
         self.input_ids = self.input_ids[hit_idcs]
@@ -253,15 +262,15 @@ class TokenizedDataset(BaseDataset):
         self.attention_mask = self.attention_mask[hit_idcs]
 
         self.sequential_lengths = np.load(
-            file=os.path.join(self.data_path, "seq_len.npy"),
+            file=os.path.join(self.data_path, "seq_len.npy"), allow_pickle=True
         )
         self.sequential_lengths = self.sequential_lengths[hit_idcs]
 
 
         self.label = np.load(
             file=os.path.join(
-                self.label_path, "{}_{}_label.npy".format(self.prefix, self.task)
-            ).format(self.prefix, self.task),
+                self.label_path, "{}_{}.npy".format(self.prefix, self.task)
+            ).format(self.prefix, self.task), allow_pickle=True
         )
         self.label = torch.tensor(self.label[hit_idcs], dtype=torch.long)
     
@@ -365,6 +374,7 @@ class MLMTokenizedDataset(BaseDataset):
         out = {"label": torch.stack([s["mlm_labels"] for s in samples])}
 
         out["net_input"] = input
+
         return out
 
 class Word2VecDataset(BaseDataset):

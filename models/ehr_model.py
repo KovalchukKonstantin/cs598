@@ -83,9 +83,11 @@ class EHRModel(nn.Module):
         return sample['label'].float()
 
     def forward(self, value, **kwargs):
+        #print(kwargs)
         x = self.embed_model(**kwargs)  # (B, S, E)
-        
+        #print(x.shape)
         if self.val_proj:
+            #print("EXTENDO")
             # value shape is expected to be (B, S, 1)
             value = value.unsqueeze(dim=2)
             val_emb = self.val_proj(value)

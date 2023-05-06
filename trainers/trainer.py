@@ -5,7 +5,9 @@ import tqdm
 
 import torch
 import torch.nn as nn
+import numpy as np
 
+from preprocess.preprocess_utils import simple_train_valid_test_split
 from sklearn.metrics import roc_auc_score, average_precision_score
 from torch.nn.parallel.data_parallel import DataParallel
 from torch.utils.data import DataLoader
@@ -74,9 +76,20 @@ class Trainer(object):
             )
         )
 
-        self.model = nn.DataParallel(model, device_ids=args.device_ids).to('cuda')
+        #  self.model = nn.DataParallel(model, device_ids=args.device_ids).to('cuda')
+        self.model = model.to('cpu')
+        
+
+
+        value_set = np.load(
+            file=os.path.join(self.input_path, "label", "{}_{}.npy".format(self.data ,self.task)), allow_pickle=True
+        )
+        seed = np.random.seed(42)  
+        self.labels = simple_train_valid_test_split(value_set, 0.2, 0.25, seed)["fold"]
+
 
         for subset in ['train'] + self.valid_subsets:
+            print(f"Loading {subset} dataset")
             self.load_dataset(subset)
 
         self.criterion = (
@@ -113,6 +126,7 @@ class Trainer(object):
                 ratio=self.ratio
             )
         elif self.embed_model_type.startswith('descemb'):
+            print('descemb')
             dataset = TokenizedDataset(
                 input_path=self.input_path,
                 data=self.data,
@@ -122,7 +136,8 @@ class Trainer(object):
                 value_embed_type=self.value_embed_type,
                 task=self.task,
                 seed=self.seed,
-                ratio=self.ratio
+                ratio=self.ratio,
+                split_labels=self.labels
             )
         else:
             raise NotImplementedError(self.model_type)
@@ -147,8 +162,12 @@ class Trainer(object):
 
                 net_output = self.model(**sample["net_input"])
                 #NOTE we assume self.model is wrapped by torch.nn.parallel.data_parallel.DataParallel
-                logits = self.model.module.get_logits(net_output)
-                target = self.model.module.get_targets(sample).to(logits.device)
+                #logits = self.model.module.get_logits(net_output)
+                #target = self.model.module.get_targets(sample).to(logits.device)
+
+                logits = self.model.get_logits(net_output)
+                target = self.model.get_targets(sample).to(logits.device)
+
 
                 if self.task == 'diagnosis':
                     loss = self.criterion(logits, target.squeeze(2))
@@ -203,8 +222,11 @@ class Trainer(object):
                 with torch.no_grad():
                     net_output = self.model(**sample["net_input"])
                     #NOTE we assume self.model is wrapped by torch.nn.parallel.data_parallel.DataParallel
-                    logits = self.model.module.get_logits(net_output)
-                    target = self.model.module.get_targets(sample).to(logits.device)
+                    #logits = self.model.module.get_logits(net_output)
+                    #target = self.model.module.get_targets(sample).to(logits.device)
+
+                    logits = self.model.get_logits(net_output)
+                    target = self.model.get_targets(sample).to(logits.device)
 
                     if self.task == 'diagnosis':
                         loss = self.criterion(logits, target.squeeze(2))

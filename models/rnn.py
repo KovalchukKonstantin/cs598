@@ -37,15 +37,22 @@ class RNNModel(nn.Module):
 
         i = range(x.size(0))
         x = output_seq[i, -1, :]
+        
 
         output = self.final_proj(x)
 
         return output
 
     def pack_pad_seq(self, x, lengths):
-        lengths = lengths.squeeze(-1).cpu()
-        
+        #print(lengths.shape)
+        lengths = lengths.squeeze(-1).cpu().numpy()
+
+      
+
+        #print(lengths.shape)
+        #print(x.shape)
         packed = pack_padded_sequence(x, lengths, batch_first=True, enforce_sorted=False)
-        output, _ = self.model(packed)
-        output_seq, output_len = pad_packed_sequence(output, batch_first=True, padding_value=0)
-        return output_seq, output_len
+        #print(packed.data.shape)
+        output, _ = self.model(x)
+        #output_seq, output_len = pad_packed_sequence(output, batch_first=True, padding_value=0)
+        return output, None

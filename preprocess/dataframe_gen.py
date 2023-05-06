@@ -172,7 +172,7 @@ def merge_df(df_lab, df_med, df_inf):
 
 def list_prep(df, df_icu):
     column_list = ['code_name', 'code_offset', 'value', 'uom']
-    df_agg = df.groupby(['ID']).agg({column: lambda x: x.tolist() for column in column_list})
+    df_agg = df.agg({column: lambda x: x.tolist() for column in column_list})
     df = pd.merge(df_icu, df_agg, how='left', on=['ID'])
 
     return df

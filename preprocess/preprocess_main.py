@@ -107,9 +107,12 @@ def main():
     wd = os.getcwd()
     print('working directory .. : ', wd)
 
-    #create_MIMIC_dataset(os.path.join(args.data_input_path, 'mimic'))
-    #create_eICU_dataset(os.path.join(args.data_input_path, 'eicu'))
-
+    print(args.data_input_path)
+    print(args.data_output_path)
+    create_MIMIC_dataset(os.path.join(args.data_input_path, 'mimic'))
+    create_eICU_dataset(os.path.join(args.data_input_path, 'eicu'))
+    print('create dataset finish!!')
+    
     preprocess(args.data_input_path, 
                     item_list,
                    csv_files_dict, 
@@ -119,8 +122,8 @@ def main():
                    args.max_length,
                    args.data_type)
     
-    #convert2numpy(args.data_input_path, args.data_output_path)
-    #label_npy_file(args.data_input_path, args.data_output_path)
+    convert2numpy(args.data_input_path, args.data_output_path)
+    label_npy_file(args.data_input_path, args.data_output_path)
     
     print('preprocess finish!!')
 

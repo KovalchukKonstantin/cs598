@@ -48,7 +48,7 @@ def get_parser():
     # dataset
     parser.add_argument('--data', choices=['mimic', 'eicu', 'pooled'], type=str, required=True)
     parser.add_argument('--eval_data', choices=['mimic', 'eicu', 'pooled'], type=str, default=None, required=False)
-    parser.add_argument('--value_embed_type', choices=['VA','DSVA','DSVA_DPE','VC', 'nonconcat'], default='nonconcat')
+    parser.add_argument('--value_embed_type', choices=['VA','DSVA','DSVA_DPE','VC', 'nonconcat'], default='VC')
     parser.add_argument('--fold', type=str, default=None)
     parser.add_argument('--valid_subsets', type=str, default="valid, test")
 

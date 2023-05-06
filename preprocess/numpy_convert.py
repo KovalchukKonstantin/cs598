@@ -24,11 +24,24 @@ def null_fill(df, value_mode):
     def _fillNA(seq, rp_value):
         return [rp_value if x!=x else x for x in seq ]
     
+    def _fillNA_floats(seq, rp_value):
+        new_seq = []
+        for x in seq:
+            if x!=x:
+                new_seq.append(rp_value)
+            else:
+                if(type(x)==str):
+                    new_seq.append(0.0)
+                else:
+                    new_seq.append(float(x))
+        return new_seq
+        #return [rp_value if x!=x else float(x) for x in seq ]
+
     if value_mode =='VC':
-        df['value'] = df['value'].map(lambda x : _fillNA(x, 0.0))
+        df['value'] = df['value'].map(lambda x : _fillNA_floats(x, 0.0))
         df['uom'] = df['uom'].map(lambda x : _fillNA(x, ' ')) 
     else: 
-        df['value'] = df['value'].map(lambda x : _fillNA(x, ' '))
+        df['value'] = df['value'].map(lambda x : _fillNA_floats(x, 0.0))
         df['uom'] = df['uom'].map(lambda x : _fillNA(x, ' '))
     
     return df
@@ -105,7 +118,7 @@ def convert2numpy(input_path, output_path):
     sources = ['mimic','eicu']
     tokenizer= AutoTokenizer.from_pretrained("emilyalsentzer/Bio_ClinicalBERT")
     for src in sources:
-        save_path = f'{output_path}/input/{src}'
+        save_path = f'{output_path}/{src}'
         filename = '{}_df.pkl'.format(src)
         df = pd.read_pickle(os.path.join(input_path, filename))
         print('{} input files load !'.format(src))
@@ -115,7 +128,7 @@ def convert2numpy(input_path, output_path):
             print('save_name', save_name)
             df = null_fill(df, value_mode)
             df = agg_col(df, value_mode)
-
+#
             vocab = making_vocab(df)
             vocab['0.0'] = 0
             src2index= partial(word2index, vocabs=vocab)
@@ -140,7 +153,9 @@ def convert2numpy(input_path, output_path):
             if value_mode == 'NV':
                 #value
                 value = np.array([df['value']])
-                np.save(os.path.join(save_path, 'value.npy'), value[0])
+                #print(type(value[0]))
+                #print(value[0])
+                np.save(os.path.join(save_path, 'value.npy'), value[0])  
 
 
             if value_mode =='DSVA':
@@ -155,4 +170,4 @@ def convert2numpy(input_path, output_path):
         seq_len = np.array([df['seq_len']])
         np.save(os.path.join(save_path, 'seq_len.npy'), seq_len[0])              
 
-    
+#convert2numpy("/Users/konstantin/cs598/data_input_path","/Users/konstantin/cs598/data_output_path")
