@@ -1,10 +1,4 @@
 # Unifying Heterogeneous Electronic Health Record Systems via Clinical Text-Based Code Embedding
-Kyunghoon Hur, Jiyoung Lee, Jungwoo Oh, Wesley Price, Young-Hak Kim, Edward Choi
-
-This repository provides official Pytorch code to implement DescEmb, a code-agnostic EHR predictive model.
-
-The paper can be found in this link:
-[Unifying Heterogeneous Electronic Health Record Systems via Clinical Text-Based Code Embedding](https://arxiv.org/abs/2108.03625)
 
 # Requirements
 
@@ -61,19 +55,19 @@ Then run preprocessing code
 $ python preprocess_main.py 
     --data_input_path $csv_directory
     --data_output_path $run_ready_directory 
-```
-Note that pre-processing takes about 1hours in 128 cores of AMD EPYC 7502 32-Core Processor, and requires 60GB of RAM.
 
 # Examples
 ## Pre-training a model
 ### Pre-train a DescEmb model with Masked Language Modeling (MLM)
+
+Its important to note that these wont work if your machine does not support cuda. If you want to run it on the cpu go to the trainers file and uncomment the corresponding lines
 
 ```shell script
 $ python main.py \
     --distributed_world_size $WORLDSIZE \
     --input_path /path/to/data \
     --data $data \
-    --task mlm \
+    --task diagnosis \
     --mlm_prob $percent \
     --model $model
 ```
@@ -85,10 +79,10 @@ $ python main.py \
     --distributed_world_size $WORLDSIZE \
     --input_path /path/to/data \
     --data $data \
-    --task w2v
+    --task diagnosis
     --model codeemb
 ```
-$data should be set to 'mimic' or 'eicu'
+$data should be set to 'mimic' or 'eicu' or 'pooled'
 
 $percent should be set to probability (default: 0.3) of masking for MLM
 
